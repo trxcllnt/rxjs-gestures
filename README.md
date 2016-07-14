@@ -2,8 +2,6 @@
 
 Unified mouse + touch interaction as RxJS Observables. Abstracts away mouse vs. touch events so you can get on to more important things.
 
-
-
 ```es6
 import { Gestures } from 'rxjs-gestures';
 

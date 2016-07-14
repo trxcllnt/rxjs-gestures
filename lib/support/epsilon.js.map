@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/support/epsilon.js"],"names":[],"mappings":";;;;;QAAgB,O,GAAA,O;AAAT,SAAS,OAAT,CAAiB,CAAjB,EAAoB,CAApB,EAAuB,EAAvB,EAA2B,EAA3B,EAA+B;AAClC,WAAQ,IAAI,CAAL,GAAW,KAAK,EAAN,GAAa,KAAK,EAAnC;AACH","file":"epsilon.js","sourcesContent":["export function epsilon(w, h, dx, dy) {\n    return (w * h) < (dx * dx) + (dy * dy);\n}\n"]}
