@@ -1,4 +1,4 @@
-import { Subscriber } from 'rxjs/Subscriber';
+import { Subscriber } from 'rxjs';
 import { DeltaSubscriber } from './DeltaOperator';
 
 export class DecelerateOperator {

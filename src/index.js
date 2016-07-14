@@ -1,10 +1,15 @@
 import 'rxjs/add/operator/let';
+import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/take';
 import 'rxjs/add/operator/mapTo';
+import 'rxjs/add/operator/merge';
 import 'rxjs/add/operator/filter';
+import 'rxjs/add/observable/race';
 import 'rxjs/add/observable/empty';
 import 'rxjs/add/observable/never';
 import 'rxjs/add/observable/timer';
+import 'rxjs/add/observable/merge';
+import 'rxjs/add/operator/groupBy';
 import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/multicast';
 import 'rxjs/add/operator/startWith';
@@ -15,10 +20,8 @@ import 'rxjs/add/observable/fromEvent';
 import 'rxjs/add/operator/timeInterval';
 import 'rxjs/add/operator/withLatestFrom';
 
-import { Subject } from 'rxjs/Subject';
-import { Observable } from 'rxjs/Observable';
 import $$observable from 'symbol-observable';
-import { async } from 'rxjs/scheduler/async';
+import { Subject, Scheduler, Observable } from 'rxjs';
 import { epsilon, selectId, normalize } from './support';
 import { TapOperator, PanOperator,
          DeltaOperator, PressOperator,
@@ -74,10 +77,10 @@ export class Gestures extends Observable {
     stopPropagation(immediate = false) {
         return this.lift(new StopPropagationOperator(immediate));
     }
-    delta(point, scheduler = async) {
+    delta(point, scheduler = Scheduler.async) {
         return this.lift(new DeltaOperator(point, scheduler));
     }
-    decelerate(coefficientOfFriction = 0.25, normalForce = 9.8, scheduler = async) {
+    decelerate(coefficientOfFriction = 0.25, normalForce = 9.8, scheduler = Scheduler.async) {
         return this.lift(new DecelerateOperator(coefficientOfFriction, normalForce, scheduler));
     }
     inside({ x: radiusX, y: radiusY }, point) {
@@ -94,12 +97,12 @@ export class Gestures extends Observable {
         const { topLevelElement } = this;
         return this
             .start(target)
-            .multicast(() => new Subject(), (starts) => Observable.merge(
-                starts.take(1),
-                starts.takeWhile(({ identifier }) => (
-                    identifier !== 'mouse'
-                ))
-            ))
+            // .multicast(() => new Subject(), (starts) => Observable.merge(
+            //     starts.take(1),
+            //     starts.takeWhile(({ identifier }) => (
+            //         identifier !== 'mouse'
+            //     ))
+            // ))
             .let(Gestures.from)
             .groupBy(getIdentifier, null, (starts) => this
                 .race(this.end(topLevelElement), this.cancel(topLevelElement))
