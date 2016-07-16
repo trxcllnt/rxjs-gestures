@@ -5,7 +5,7 @@ Unified mouse + touch interaction as RxJS Observables. Abstracts away mouse vs. 
 ```es6
 import { Gestures } from 'rxjs-gestures';
 
-const rect = document.appendChild(document.createElement('div'));
+const rect = document.body.appendChild(document.createElement('div'));
 rect.style.width = '100px';
 rect.style.height = '100px';
 rect.style.border = '1px solid black';
@@ -70,4 +70,23 @@ Gestures.pan(rect
     .subscribe(({ pageY, pageX, identifier }) =>
         console.log(`panning with ${event.identifier} at (${pageX}, ${pageY})`)
     );
+
+// Listen for "pan" events
+Gestures.pan(rect).flatMap((pan ) => 
+    // For each input (mouse, finger, etc.), convert the pan's coorinates
+    // into  rect coordinates. When the pan completes, decelerate from the
+    // pan's end velocity vector to zero. Essentially this "fakes" more
+    // move events, but the subscriber doesn't know the difference.
+    pan .decelerate()
+        .scan(({ top, left }, { deltaX, deltaY, event }) => ({
+            top: top + deltaY,
+            left: left + deltaX,
+            target: event.target,
+        }), rect.getBoundingClientRect())
+    )
+    // Move the rectangle
+    .subscribe(({ top, left, target }) => {
+        rect.style.transform = `translate3d(${left}px, ${top}px, 0px)`;
+    });
+
 ```
