@@ -1,4 +1,4 @@
-import { Subscriber } from 'rxjs/Subscriber';
+import { Subscriber } from 'rxjs';
 
 export class StopPropagationOperator {
     constructor(immediate = false) {
@@ -10,11 +10,15 @@ export class StopPropagationOperator {
 }
 
 class StopPropagationSubscriber extends Subscriber  {
-    _next(normalizedEvent) {
-        const { event } = normalizedEvent;
-        !this.immediate ?
-            event.stopPropagation() :
-            event.stopImmediatePropagation();
-        super._next(normalizedEvent);
+    constructor(destination, immediate) {
+        super(destination);
+        this.immediate = immediate;
+    }
+    _next(maybeNormalized) {
+        const { event = maybeNormalized } = maybeNormalized;
+        if (!this.immediate) {
+            event.stopPropagation(); } else {
+            event.stopImmediatePropagation(); }
+        super._next(maybeNormalized);
     }
 }

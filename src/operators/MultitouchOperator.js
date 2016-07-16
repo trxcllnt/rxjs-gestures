@@ -1,0 +1,60 @@
+import { MergeAllSubscriber } from 'rxjs/operator/mergeAll';
+
+export class MultitouchOperator {
+    call(subscriber, source) {
+        return source._subscribe(new MultitouchSubscriber(subscriber));
+    }
+}
+
+const degToRad = Math.PI / 180;
+
+export class MultitouchSubscriber extends MergeAllSubscriber {
+    constructor(destination) {
+        super(destination, Number.POSITIVE_INFINITY);
+    }
+    _next(event) {
+
+        const { type, currentTarget: target } = event;
+        const isTouch = (type[0] === 't');
+
+        if (!isTouch) {
+            const { pageX, pageY, clientX, clientY, screenX, screenY } = event;
+            this.notifyNext(event, {
+                type, event, touch: event, target,
+                pageX, pageY, screenX, screenY,
+                clientX, clientY, radiusX: 1, radiusY: 1,
+                identifier: 'mouse', rotationAngle: 0
+            }, this.index++, 0);
+        } else {
+            let touchesIndex = -1;
+            const touches = event.changedTouches;
+            const eventIndex = this.index++;
+            const touchesLen = touches.length;
+            while (++touchesIndex < touchesLen) {
+                const touch = touches[touchesIndex];
+                const { identifier, pageX, pageY,
+                        screenX, screenY, clientX, clientY,
+                        radiusX = 1, radiusY = 1, rotationAngle = 0 } = touch;
+                this.notifyNext(event, {
+                    type, event, touch, target, identifier,
+                    pageX, pageY, screenX, screenY,
+                    clientX, clientY, radiusX, radiusY,
+                    rotationAngle: rotationAngle * degToRad
+                }, eventIndex, touchesIndex);
+            }
+        }
+    }
+}
+
+/*
+// const changes = !isTouch ? [event] : Array.from(event.changedTouches);
+// const targets = !isTouch ? changes : reduceTouches(event.targetTouches);
+// const touches = !isTouch ? targets : changes.filter((touch) => (
+//     targets.hasOwnProperty(touch.identifier)
+// ));
+function reduceTouches(touches) {
+    return Array.from(touches).reduce((touches, touch) => ({
+        ...touches, [touch.identifier]: touch
+    }), {})
+}
+*/

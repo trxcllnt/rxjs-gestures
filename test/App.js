@@ -7,17 +7,19 @@ export class App extends Component {
     initialize(models, depth) {
 
         const tapButton = new Button({
-            label: 'Tap me! (< 250ms)',
+            label: 'Tap me (<= 250ms)',
             type: `tap`, delay: 250,
             index: 0, depth: depth + 1,
             models: models.deref('tap'),
         });
+
         const pressButton = new Button({
-            label: 'Press me (> 450ms)',
+            label: 'Long Press me (>= 450ms)',
             type: `press`, delay: 450,
             index: 1, depth: depth + 1,
             models: models.deref('press'),
         });
+
         const dragArea = new SelectArea({
             index: 2, depth: depth + 1,
             models: models.deref('drag'),
@@ -100,38 +102,38 @@ class SelectArea extends Component {
 
         const hasSelectedArea = area != null;
         const ends = Gestures.end(this.listen('end'));
-        const taps = Gestures.tap(this.listen('start')).mergeAll();
         const starts = Gestures.start(this.listen('start'));
-        // const taps = Observable.merge(
-        //     Gestures.tap(this.listen('start')),
-        //     Gestures.tap(this.listen('box-start')),
-        // );
+        const taps = Observable.merge(
+            Gestures.tap(this.listen('start'), 250, { x: 100, y: 100 }),
+            Gestures.tap(this.listen('box-start')),
+        ).mergeMap((tap) => tap.repeat());
 
         const dragBox = Gestures
             .pan(this.listen('box-start'))
             .mergeMap((pan) => pan
+                .stopPropagation(true)
                 .decelerate(0.1, 9.8)
-                .map(({ totalX, totalY }) => ({
-                    top: area.top + totalY,
-                    left: area.left + totalX,
-                    right: area.right + totalX,
-                    bottom: area.bottom + totalY
+                .map(({ targetX, targetY, deltaXTotal, deltaYTotal }) => ({
+                    x: targetX, y: targetY,
+                    w: area.w, h: area.h
                 }))
                 .let(writeRectsOnChange)
                 .map(({ area }) => ({ drag: true, area }))
+                .repeat()
             );
 
         const dragCrosshairs = Gestures
-            .pan(this.listen('start'))
+            .pan(this.listen('start'), 450, { x: 1000, y: 1000 })
             .mergeMap((pan) => pan
-                .map(({ originX, originY, totalX, totalY }) => ({
-                    top: Math.min(originY, originY + totalY),
-                    left: Math.min(originX, originX + totalX),
-                    right: Math.max(originX, originX + totalX),
-                    bottom: Math.max(originY, originY + totalY)
+                .map(({ xOrigin, yOrigin, deltaXTotal, deltaYTotal }) => ({
+                    x: Math.min(xOrigin, xOrigin + deltaXTotal),
+                    y: Math.min(yOrigin, yOrigin + deltaYTotal),
+                    w: Math.abs(deltaXTotal),
+                    h: Math.abs(deltaYTotal)
                 }))
                 .let(writeRectsOnChange)
                 .map(({ area }) => ({ drag: false, area }))
+                .repeat()
             );
 
         const rects = !hasSelectedArea ?
@@ -164,8 +166,9 @@ class SelectArea extends Component {
     }
     render(model, { drag = false, down = false, area = null }) {
         const hasSelectedArea = area != null;
-        const { top = 0, left = 0,
-                right = 0, bottom = 0 } = (area || {});
+        const { x = 0, y = 0, w = 0, h: h_ = 0 } = (area || {});
+        // const { top = 0, left = 0,
+        //         right = 0, bottom = 0 } = (area || {});
         return (
             <div key_='drag-area'
                  on-touchstart={this.dispatch('start')}
@@ -177,22 +180,25 @@ class SelectArea extends Component {
                     cursor: `crosshair`,
                     position: 'relative',
                     border: `1px solid black`,
-                    transformStyle: `preserve-3d`,
+                    // transformStyle: `preserve-3d`,
                     backgroundColor: down ? 'lightgray' : 'white'
-                 }}>{!hasSelectedArea ? [] : [
+                 }}>
+                 <p>Long press (>= 450ms) and drag</p>
+                 {!hasSelectedArea ? [] : [
                     <div key_='drag-selection'
                          on-touchstart={this.dispatch('box-start')}
                          on-mousedown={this.dispatch('box-start')}
                          style_={{
                              opacity: 0.25,
-                             position: 'relative',
+                             position: 'absolute',
+                             top: '0px', left: '0px',
                              backgroundColor: 'black',
                              border: `1px dashed black`,
-                             width: `${right - left}px`,
-                             height: `${bottom - top}px`,
+                             width: `${w}px`,
+                             height: `${h_}px`,
                              cursor: !drag ? '-webkit-grab' : '-webkit-grabbing',
                              pointerEvents: !drag && down ? 'none' : 'auto',
-                             transform: `translate3d(${left}px, ${top}px, 0px)`,
+                             transform: `translate3d(${x}px, ${y}px, 0px)`,
                         }}>
                     </div>
             ]}</div>

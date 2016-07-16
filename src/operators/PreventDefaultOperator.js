@@ -7,9 +7,9 @@ export class PreventDefaultOperator {
 }
 
 class PreventDefaultSubscriber extends Subscriber  {
-    _next(normalizedEvent) {
-        const { event } = normalizedEvent;
+    _next(maybeNormalized) {
+        const { event = maybeNormalized } = maybeNormalized;
         event.preventDefault();
-        super._next(normalizedEvent);
+        super._next(maybeNormalized);
     }
 }

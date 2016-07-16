@@ -1,3 +1,3 @@
+export * from './Point'
 export * from './epsilon';
 export * from './selectId';
-export * from './normalize';

@@ -1,6 +1,5 @@
 import { selectId } from '../support';
 import { Observable, Subscriber } from 'rxjs';
-// import { MergeAllSubscriber } from 'rxjs/operator/mergeAll';
 
 export class TapOperator {
     constructor(timeout, radius, Gestures) {
@@ -17,10 +16,8 @@ export class TapOperator {
 }
 
 export class TapSubscriber extends Subscriber {
-// export class TapSubscriber extends MergeAllSubscriber {
     constructor(destination, timeout, radius, Gestures) {
         super(destination);
-        // super(destination, Number.POSITIVE_INFINITY);
         this.timeout = timeout;
         this.radius = radius;
         this.Gestures = Gestures;

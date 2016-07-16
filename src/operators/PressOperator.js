@@ -1,6 +1,5 @@
 import { selectId } from '../support';
-import { Observable, Subscriber } from 'rxjs';
-// import { MergeAllSubscriber } from 'rxjs/operator/mergeAll';
+import { Subscriber } from 'rxjs';
 
 export class PressOperator {
     constructor(delay, radius, Gestures) {
@@ -17,10 +16,8 @@ export class PressOperator {
 }
 
 export class PressSubscriber extends Subscriber {
-// export class PressSubscriber extends MergeAllSubscriber {
     constructor(destination, delay, radius, Gestures) {
         super(destination);
-        // super(destination, Number.POSITIVE_INFINITY);
         this.delay = delay;
         this.radius = radius;
         this.Gestures = Gestures;
