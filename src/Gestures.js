@@ -9,7 +9,7 @@ import { TapOperator, PanOperator,
 const mouseEvents = {
     start: 'mousedown', end: 'mouseup',
     move: 'mousemove', cancel: 'mouseleave',
-    wheel: 'wheel',
+    wheel: 'wheel', mousewheel: 'mousewheel',
 };
 
 const touchEvents = {
@@ -30,7 +30,6 @@ export function install(topLevelElement = getTopLevelElement()) {
         static topLevelElement = topLevelElement;
     }
 }
-
 
 export class Gestures extends Observable {
     static topLevelElement = getTopLevelElement();
@@ -68,13 +67,13 @@ export class Gestures extends Observable {
         return this.lift(new DecelerateOperator(coefficientOfFriction, normalForce, scheduler));
     }
     inside({ x: radiusX, y: radiusY }) {
-        return this.filter(({ deltaXTotal, deltaYTotal }) => !epsilon(
-            radiusX, radiusY, deltaXTotal, deltaYTotal
+        return this.filter(({ movementXTotal, movementYTotal }) => !epsilon(
+            radiusX, radiusY, movementXTotal, movementYTotal
         ));
     }
     outside({ x: radiusX, y: radiusY }) {
-        return this.filter(({ deltaXTotal, deltaYTotal }) => epsilon(
-            radiusX, radiusY, deltaXTotal, deltaYTotal
+        return this.filter(({ movementXTotal, movementYTotal }) => epsilon(
+            radiusX, radiusY, movementXTotal, movementYTotal
         ));
     }
     normalize(origin, Gestures_ = Gestures, scheduler = Scheduler.animationFrame) {
@@ -159,4 +158,4 @@ export class Gestures extends Observable {
     }
 }
 
-export { Gestures as default };
+export default Gestures;

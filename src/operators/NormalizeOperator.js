@@ -29,8 +29,8 @@ export class NormalizeSubscriber extends Subscriber {
         let { origin } = this;
         const time = this.scheduler.now();
 
-        const { event, touch, target,
-                pageX, pageY, clientX, clientY, screenX, screenY,
+        const { index, event, touch, target, screenX, screenY,
+                pageX, pageY, clientX, clientY, deltaX, deltaY, deltaZ,
                 radiusX = 1, radiusY = 1, rotationAngle = 0 } = multitouchEvent;
 
         if (!origin) {
@@ -42,12 +42,13 @@ export class NormalizeSubscriber extends Subscriber {
         const { previous = origin } = this;
         const { pageX: prevX, pageY: prevY } = previous;
 
-        const deltaX = pageX - prevX;
-        const deltaY = pageY - prevY;
-        const deltaT = time - previous.time;
-        const deltaXTotal = deltaX + previous.deltaXTotal;
-        const deltaYTotal = deltaY + previous.deltaYTotal;
-        const direction = Math.atan2(deltaY / deltaT, deltaX / deltaT) || 0;
+        const movementX = pageX - prevX;
+        const movementY = pageY - prevY;
+        const movementT = time - previous.time;
+        const movementXTotal = movementX + previous.movementXTotal;
+        const movementYTotal = movementY + previous.movementYTotal;
+        const movementTTotal = movementT + previous.movementTTotal;
+        const direction = Math.atan2(movementY / movementT, movementX / movementT) || 0;
         const magnitude = Math.abs(
             Math.sqrt(Math.pow(pageX, 2) + Math.pow(pageY, 2)) -
             Math.sqrt(Math.pow(prevX, 2) + Math.pow(prevY, 2))
@@ -56,13 +57,17 @@ export class NormalizeSubscriber extends Subscriber {
         const point = origin.clone();
 
         point.time = time;
+        point.index = index;
         point.touch = touch;
         point.event = event;
         point.pageX = pageX;
         point.pageY = pageY;
-        point.deltaT = deltaT;
+        point.movementT = movementT;
+        point.movementX = movementX;
+        point.movementY = movementY;
         point.deltaX = deltaX;
         point.deltaY = deltaY;
+        point.deltaZ = deltaZ;
         point.clientX = clientX;
         point.clientY = clientY;
         point.screenX = screenX;
@@ -71,18 +76,21 @@ export class NormalizeSubscriber extends Subscriber {
         point.radiusY = radiusY;
         point.magnitude = magnitude;
         point.direction = direction;
-        point.deltaXTotal = deltaXTotal;
-        point.deltaYTotal = deltaYTotal;
+        point.movementXTotal = movementXTotal;
+        point.movementYTotal = movementYTotal;
+        point.movementTTotal = movementTTotal;
         point.rotationAngle = rotationAngle;
 
-        point.targetX += deltaXTotal;
-        point.targetY += deltaYTotal;
-        point.targetPageX += deltaXTotal;
-        point.targetPageY += deltaYTotal;
-        point.targetClientX += deltaXTotal;
-        point.targetClientY += deltaYTotal;
-        point.targetScreenX += deltaXTotal;
-        point.targetScreenY += deltaYTotal;
+        point.x += movementXTotal;
+        point.y += movementYTotal;
+        point.targetX += movementXTotal;
+        point.targetY += movementYTotal;
+        point.targetPageX += movementXTotal;
+        point.targetPageY += movementYTotal;
+        point.targetClientX += movementXTotal;
+        point.targetClientY += movementYTotal;
+        point.targetScreenX += movementXTotal;
+        point.targetScreenY += movementYTotal;
 
         super._next(this.previous = point);
     }

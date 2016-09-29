@@ -113,7 +113,7 @@ class SelectArea extends Component {
             .mergeMap((pan) => pan
                 .stopPropagation(true)
                 .decelerate(0.1, 9.8)
-                .map(({ targetX, targetY, deltaXTotal, deltaYTotal }) => ({
+                .map(({ targetX, targetY, movementXTotal, movementYTotal }) => ({
                     x: targetX, y: targetY,
                     w: area.w, h: area.h
                 }))
@@ -125,11 +125,11 @@ class SelectArea extends Component {
         const dragCrosshairs = Gestures
             .pan(this.listen('start'), 450, { x: 1000, y: 1000 })
             .mergeMap((pan) => pan
-                .map(({ xOrigin, yOrigin, deltaXTotal, deltaYTotal }) => ({
-                    x: Math.min(xOrigin, xOrigin + deltaXTotal),
-                    y: Math.min(yOrigin, yOrigin + deltaYTotal),
-                    w: Math.abs(deltaXTotal),
-                    h: Math.abs(deltaYTotal)
+                .map(({ xOrigin, yOrigin, movementXTotal, movementYTotal }) => ({
+                    x: Math.min(xOrigin, xOrigin + movementXTotal),
+                    y: Math.min(yOrigin, yOrigin + movementYTotal),
+                    w: Math.abs(movementXTotal),
+                    h: Math.abs(movementYTotal)
                 }))
                 .let(writeRectsOnChange)
                 .map(({ area }) => ({ drag: false, area }))

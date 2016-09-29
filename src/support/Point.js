@@ -41,6 +41,7 @@ export class Point {
 }
 
 Point.prototype.time = 0;
+Point.prototype.index = 0;
 Point.prototype.event = null;
 Point.prototype.touch = null;
 Point.prototype.target = null;
@@ -63,13 +64,14 @@ Point.prototype.targetScreenX = 0;
 Point.prototype.targetScreenY = 0;
 Point.prototype.rotationAngle = 0;
 
-Point.prototype.deltaX = 0;
-Point.prototype.deltaY = 0;
-Point.prototype.deltaT = 0;
+Point.prototype.movementX = 0;
+Point.prototype.movementY = 0;
+Point.prototype.movementT = 0;
 Point.prototype.magnitude = 0;
 Point.prototype.direction = 0;
-Point.prototype.deltaXTotal = 0;
-Point.prototype.deltaYTotal = 0;
+Point.prototype.movementXTotal = 0;
+Point.prototype.movementYTotal = 0;
+Point.prototype.movementTTotal = 0;
 Point.prototype.timeOrigin = 0;
 Point.prototype.pageXOrigin = 0;
 Point.prototype.pageYOrigin = 0;

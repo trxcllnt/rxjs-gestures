@@ -11,9 +11,11 @@ const degToRad = Math.PI / 180;
 export class MultitouchSubscriber extends MergeAllSubscriber {
     constructor(destination) {
         super(destination, Number.POSITIVE_INFINITY);
+        this.index = 0;
     }
     _next(event) {
 
+        const index = this.index++;
         const { type, currentTarget: target } = event;
         const isTouch = (type[0] === 't');
 
@@ -21,14 +23,13 @@ export class MultitouchSubscriber extends MergeAllSubscriber {
             const { pageX, pageY, clientX, clientY, screenX, screenY } = event;
             this.notifyNext(event, {
                 type, event, touch: event, target,
-                pageX, pageY, screenX, screenY,
+                index, pageX, pageY, screenX, screenY,
                 clientX, clientY, radiusX: 1, radiusY: 1,
                 identifier: 'mouse', rotationAngle: 0
-            }, this.index++, 0);
+            }, index, 0);
         } else {
             let touchesIndex = -1;
             const touches = event.changedTouches;
-            const eventIndex = this.index++;
             const touchesLen = touches.length;
             while (++touchesIndex < touchesLen) {
                 const touch = touches[touchesIndex];
@@ -37,10 +38,10 @@ export class MultitouchSubscriber extends MergeAllSubscriber {
                         radiusX = 1, radiusY = 1, rotationAngle = 0 } = touch;
                 this.notifyNext(event, {
                     type, event, touch, target, identifier,
-                    pageX, pageY, screenX, screenY,
+                    index, pageX, pageY, screenX, screenY,
                     clientX, clientY, radiusX, radiusY,
                     rotationAngle: rotationAngle * degToRad
-                }, eventIndex, touchesIndex);
+                }, index, touchesIndex);
             }
         }
     }

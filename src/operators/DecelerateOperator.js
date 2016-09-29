@@ -32,8 +32,18 @@ export class DecelerateSubscriber extends Subscriber {
         }
 
         const { u, normalForce, point, scheduler } = this;
-        const { deltaT, magnitude = 0, direction } = point;
-        const duration = Math.sqrt((magnitude / deltaT) / (normalForce * u));
+        const { index = 0, movementTTotal, direction, magnitude = 0 } = point;
+
+        if (index <= 0) {
+            return super._complete();
+        }
+
+        const duration = Math.sqrt((magnitude / (movementTTotal / index)) / (normalForce * u)) || 0;
+
+        if (duration <= 0) {
+            return super._complete();
+        }
+
         const distanceX = Math.cos(direction) * magnitude * duration;
         const distanceY = Math.sin(direction) * magnitude * duration;
 
@@ -66,11 +76,11 @@ export class DecelerateSubscriber extends Subscriber {
 
             point = point.clone();
 
-            point.deltaT = now - point.time;
-            point.deltaX = pageX - point.pageX;
-            point.deltaY = pageY - point.pageY;
-            point.deltaXTotal = point.deltaX + point.deltaXTotal;
-            point.deltaYTotal = point.deltaY + point.deltaYTotal;
+            point.movementT = now - point.time;
+            point.movementX = pageX - point.pageX;
+            point.movementY = pageY - point.pageY;
+            point.movementXTotal = point.movementX + point.movementXTotal;
+            point.movementYTotal = point.movementY + point.movementYTotal;
             point.x = easingFunc(elapsed, start.x, distanceX, duration);
             point.y = easingFunc(elapsed, start.y, distanceY, duration);
             point.clientX = easingFunc(elapsed, start.clientX, distanceX, duration);
