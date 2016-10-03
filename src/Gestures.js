@@ -108,8 +108,8 @@ export class Gestures extends Observable {
                 .preventDefault()
                 .normalize(start, this)
                 .inside(radius)
+                .timeoutWith(timeout, Observable.empty())
             )
-            .timeoutWith(timeout, Observable.empty())
             .takeUntil(cancels)
             .take(1)
         );

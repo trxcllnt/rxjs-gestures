@@ -29,7 +29,7 @@ export class NormalizeSubscriber extends Subscriber {
         let { origin } = this;
         const time = this.scheduler.now();
 
-        const { index, event, touch, target, screenX, screenY,
+        const { type, index, event, touch, target, screenX, screenY,
                 pageX, pageY, clientX, clientY, deltaX, deltaY, deltaZ,
                 radiusX = 1, radiusY = 1, rotationAngle = 0 } = multitouchEvent;
 
@@ -56,6 +56,7 @@ export class NormalizeSubscriber extends Subscriber {
 
         const point = origin.clone();
 
+        point.type = type;
         point.time = time;
         point.index = index;
         point.touch = touch;
@@ -98,7 +99,7 @@ export class NormalizeSubscriber extends Subscriber {
 
         const { identifier } = touch;
         const { topLevelElement } = Gestures;
-        const { target, pageX, pageY,
+        const { type, target, pageX, pageY,
                 clientX, clientY, screenX, screenY,
                 radiusX = 1, radiusY = 1, rotationAngle = 0 } = event;
         const { offsetParent = topLevelElement,
@@ -127,6 +128,7 @@ export class NormalizeSubscriber extends Subscriber {
                                  targetPageX, targetPageY,
                                  targetClientX, targetClientY,
                                  targetScreenX, targetScreenY);
+        origin.type = type;
         origin.xOrigin = origin.x;
         origin.yOrigin = origin.y;
         origin.pageXOrigin = origin.pageX;

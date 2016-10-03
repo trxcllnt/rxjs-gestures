@@ -40,6 +40,7 @@ export class Point {
     }
 }
 
+Point.prototype.type = '';
 Point.prototype.time = 0;
 Point.prototype.index = 0;
 Point.prototype.event = null;
