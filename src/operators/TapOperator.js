@@ -39,6 +39,6 @@ export class TapSubscriber extends Subscriber {
             Gestures.cancel(topLevelElement) :
             Gestures.cancel(topLevelElement).filter(selectPoint);
 
-        super._next(Gestures.tap(starts, timeout, radius, ends, cancels));
+        super._next(Gestures.tap(starts, { timeout, radius }, ends, cancels));
     }
 }

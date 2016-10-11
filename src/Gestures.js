@@ -1,6 +1,6 @@
 import $$observable from 'symbol-observable';
-import { Subject, Scheduler, Observable } from 'rxjs';
 import { epsilon, selectId } from './support';
+import { Scheduler, Observable, ReplaySubject } from 'rxjs';
 import { TapOperator, PanOperator,
          NormalizeOperator, PressOperator,
          MultitouchOperator, DecelerateOperator,
@@ -26,12 +26,19 @@ function getTopLevelElement() {
 }
 
 export function install(topLevelElement = getTopLevelElement()) {
-    return class InstalledGestures extends Gestures {
-        static topLevelElement = topLevelElement;
-    }
+    return wrapStaticObservableMethods(
+        Observable,
+        class InstalledGestures extends Gestures {
+            static topLevelElement = topLevelElement;
+            lift(operator) {
+                const observable = new InstalledGestures(this);
+                observable.operator = operator;
+                return observable;
+            }
+        });
 }
 
-export class Gestures extends Observable {
+class Gestures extends Observable {
     static topLevelElement = getTopLevelElement();
     constructor(target, ...events) {
         if (!target || typeof target === 'function' || typeof target !== 'object') {
@@ -49,11 +56,8 @@ export class Gestures extends Observable {
             ));
         }
     }
-    static from(...args) {
-        return new Gestures(...args);
-    }
     lift(operator) {
-        const observable = new this.constructor(this);
+        const observable = new Gestures(this);
         observable.operator = operator;
         return observable;
     }
@@ -63,8 +67,8 @@ export class Gestures extends Observable {
     stopPropagation(immediate = false) {
         return this.lift(new StopPropagationOperator(immediate));
     }
-    decelerate(coefficientOfFriction = 0.25, normalForce = 9.8, scheduler = Scheduler.animationFrame) {
-        return this.lift(new DecelerateOperator(coefficientOfFriction, normalForce, scheduler));
+    decelerate(coefficientOfFriction = 25, speedLimit = 200, scheduler = Scheduler.animationFrame) {
+        return this.lift(new DecelerateOperator(coefficientOfFriction, speedLimit, scheduler));
     }
     inside({ x: radiusX, y: radiusY }) {
         return this.filter(({ movementXTotal, movementYTotal }) => !epsilon(
@@ -76,11 +80,21 @@ export class Gestures extends Observable {
             radiusX, radiusY, movementXTotal, movementYTotal
         ));
     }
-    normalize(origin, Gestures_ = Gestures, scheduler = Scheduler.animationFrame) {
+    normalize(origin, Gestures_ = this.constructor, scheduler = Scheduler.animationFrame) {
         return this.lift(new NormalizeOperator(origin, Gestures_, scheduler));
     }
-    static startsById(target = this.topLevelElement) {
-        return this.start(target).groupBy(getIdentifier);
+    static startsById(target = this.topLevelElement, inputs = 1) {
+        return this
+            .start(target)
+            .groupBy(getIdentifier)
+            .take(inputs)
+            .map((group) => {
+                const connectable = group.multicast(() => new ReplaySubject(1));
+                const refCounted = connectable.refCount();
+                refCounted.key = group.key;
+                connectable.connect();
+                return refCounted;
+            });
     }
     static start(target = this.topLevelElement) {
         return new this(target, mouseEvents.start, touchEvents.start).lift(new MultitouchOperator());
@@ -94,14 +108,22 @@ export class Gestures extends Observable {
     static cancel(target = this.topLevelElement) {
         return new this(target, mouseEvents.cancel, touchEvents.cancel).lift(new MultitouchOperator());
     }
-    static tap(target = this.topLevelElement, timeout = 250, radius = { x: 10, y: 10 }, ends/*OrInputs*/ = 1, cancels) {
-        if (arguments.length <= 4) {
+    static tap(target = this.topLevelElement, {
+                   inputs = 1, timeout = 250,
+                   radius = { x: 10, y: 10 }
+               } = {}, ends, cancels) {
+
+        if (arguments.length <= 2) {
             return (this
-                .startsById(target)
+                .startsById(target, inputs)
                 .lift(new TapOperator(timeout, radius, this))
             );
         }
-        return (new this(target)
+
+        ends = (ends instanceof this) && ends || new this(ends);
+        target = (target instanceof this) && target || new this(target);
+
+        return target
             .preventDefault()
             .normalize(null, this)
             .mergeMap((start) => ends
@@ -111,21 +133,30 @@ export class Gestures extends Observable {
                 .timeoutWith(timeout, Observable.empty())
             )
             .takeUntil(cancels)
-            .take(1)
-        );
+            .take(1);
     }
-    static press(target = this.topLevelElement, delay = 0, radius = { x: 10, y: 10 }, moves/*OrInputs*/ = 1, ends, cancels) {
-        if (arguments.length <= 4) {
-            return this
-                .startsById(target)
-                .lift(new PressOperator(delay, radius, this));
-        } else if (delay <= 0) {
-            return (new this(target)
-                .normalize(null, this)
-                .take(1)
+    static press(target = this.topLevelElement, {
+                     inputs = 1, delay = 0,
+                     radius = { x: 10, y: 10 }
+                 } = {}, moves, ends, cancels) {
+        if (arguments.length <= 2) {
+            return (this
+                .startsById(target, inputs)
+                .lift(new PressOperator(delay, radius, this))
             );
         }
-        return (new this(target)
+
+        target = (target instanceof this) && target || new this(target);
+
+        if (delay <= 0) {
+            return target
+                .normalize(null, this)
+                .take(1);
+        }
+
+        moves = (moves instanceof this) && moves || new this(moves);
+
+        return target
             .preventDefault()
             .normalize(null, this)
             .mergeMap((start) => Observable
@@ -139,23 +170,45 @@ export class Gestures extends Observable {
                         .normalize(start, this)
                         .outside(radius)))
             )
-            .take(1)
-        );
+            .take(1);
     }
-    static pan(target = this.topLevelElement, delay = 0, radius = { x: 10, y: 10 }, moves/*OrInputs*/ = 1, ends, cancels) {
-        if (arguments.length <= 4) {
+    static pan(target = this.topLevelElement, {
+                   inputs = 1, delay = 0,
+                   radius = { x: 10, y: 10 },
+               } = {}, moves, ends, cancels) {
+        if (arguments.length <= 2) {
             return this
-                .startsById(target)
-                .lift(new PanOperator(delay, radius, this));
+                .startsById(target, inputs)
+                .lift(new PanOperator(delay, radius, this))
         }
-        return (new this(target)
+        ends = (ends instanceof this) && ends || new this(ends);
+        moves = (moves instanceof this) && moves || new this(moves);
+        target = (target instanceof this) && target || new this(target);
+        return target
             .preventDefault()
             .mergeMap((start) => moves
+                .merge(ends)
                 .normalize(start, this)
                 .startWith(start))
-            .takeUntil(ends.merge(cancels))
-        );
+            .takeUntil(ends.merge(cancels));
     }
 }
 
+Gestures = wrapStaticObservableMethods(Observable, Gestures);
+
+export { Gestures };
 export default Gestures;
+
+function wrapStaticObservableMethods(Observable, Gestures) {
+    function createStaticWrapper(staticMethodName) {
+        return function(...args) {
+            return new Gestures(Observable[staticMethodName](...args));
+        }
+    }
+    for (const staticMethodName in Observable) {
+        Gestures[staticMethodName] = createStaticWrapper(staticMethodName);
+    }
+    Gestures.bindCallback = (...args) => (...args2) => new Gestures(Observable.bindCallback(...args)(...args2));
+    Gestures.bindNodeCallback = (...args) => (...args2) => new Gestures(Observable.bindNodeCallback(...args)(...args2));
+    return Gestures;
+}

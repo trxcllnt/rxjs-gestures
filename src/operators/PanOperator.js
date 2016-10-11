@@ -43,8 +43,8 @@ export class PanSubscriber extends Subscriber {
             Gestures.cancel(topLevelElement) :
             Gestures.cancel(topLevelElement).filter(selectPoint);
 
-        const presses = Gestures.press(starts, delay, radius, moves, ends, cancels);
+        const presses = Gestures.press(starts, { delay, radius }, moves, ends, cancels);
 
-        super._next(Gestures.pan(presses, delay, radius, moves, ends, cancels));
+        super._next(Gestures.pan(presses, { delay, radius }, moves, ends, cancels));
     }
 }

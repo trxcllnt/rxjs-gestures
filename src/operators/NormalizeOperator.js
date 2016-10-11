@@ -51,7 +51,7 @@ export class NormalizeSubscriber extends Subscriber {
         const direction = Math.atan2(movementY / movementT, movementX / movementT) || 0;
         const magnitude = Math.abs(
             Math.sqrt(Math.pow(pageX, 2) + Math.pow(pageY, 2)) -
-            Math.sqrt(Math.pow(prevX, 2) + Math.pow(prevY, 2))
+            Math.sqrt(Math.pow(prevX, 2) + Math.pow(prevY, 2)),
         );
 
         const point = origin.clone();
@@ -77,10 +77,10 @@ export class NormalizeSubscriber extends Subscriber {
         point.radiusY = radiusY;
         point.magnitude = magnitude;
         point.direction = direction;
+        point.rotationAngle = rotationAngle;
         point.movementXTotal = movementXTotal;
         point.movementYTotal = movementYTotal;
         point.movementTTotal = movementTTotal;
-        point.rotationAngle = rotationAngle;
 
         point.x += movementXTotal;
         point.y += movementYTotal;
@@ -102,10 +102,16 @@ export class NormalizeSubscriber extends Subscriber {
         const { type, target, pageX, pageY,
                 clientX, clientY, screenX, screenY,
                 radiusX = 1, radiusY = 1, rotationAngle = 0 } = event;
+
         const { offsetParent = topLevelElement,
                 offsetLeft, offsetTop, scrollTop, scrollLeft } = target;
-        const { top: targetTop, left: targetLeft } = target.getBoundingClientRect();
-        const { top: parentTop, left: parentLeft } = offsetParent.getBoundingClientRect();
+
+        const { top: targetTop, left: targetLeft,
+                right: targetRight, bottom: targetBottom } = target.getBoundingClientRect();
+
+        const { top: parentTop, left: parentLeft,
+                right: parentRight, bottom: parentBottom } = offsetParent.getBoundingClientRect();
+
 
         const x = clientX - targetLeft - scrollLeft;
         const y = clientY - targetTop - scrollTop;
@@ -131,6 +137,14 @@ export class NormalizeSubscriber extends Subscriber {
         origin.type = type;
         origin.xOrigin = origin.x;
         origin.yOrigin = origin.y;
+        origin.targetTop = targetTop;
+        origin.targetLeft = targetLeft;
+        origin.targetRight = targetRight;
+        origin.targetBottom = targetBottom;
+        origin.parentTop = parentTop;
+        origin.parentLeft = parentLeft;
+        origin.parentRight = parentRight;
+        origin.parentBottom = parentBottom;
         origin.pageXOrigin = origin.pageX;
         origin.pageYOrigin = origin.pageY;
         origin.clientXOrigin = origin.clientX;

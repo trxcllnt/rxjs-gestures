@@ -42,6 +42,6 @@ export class PressSubscriber extends Subscriber {
             Gestures.cancel(topLevelElement) :
             Gestures.cancel(topLevelElement).filter(selectPoint);
 
-        super._next(Gestures.press(starts, delay, radius, moves, ends, cancels));
+        super._next(Gestures.press(starts, { delay, radius }, moves, ends, cancels));
     }
 }

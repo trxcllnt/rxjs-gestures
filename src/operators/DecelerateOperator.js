@@ -1,26 +1,31 @@
 import { Subscriber } from 'rxjs';
 
 export class DecelerateOperator {
-    constructor(u, normalForce, scheduler) {
-        this.u = u;
-        this.normalForce = normalForce;
+    constructor(u, speedLimit, scheduler) {
+        if (u === 0) { u = 1; }
+        if (u < 0) { u = Math.abs(u); }
+        if (u > 100) {
+            u /= Math.pow(10, Math.ceil(Math.log10(u))) * 100;
+        }
+        this.u = u / 100;
+        this.speedLimit = Math.abs(speedLimit);
         this.scheduler = scheduler;
     }
     call(subscriber, source) {
         return source._subscribe(new DecelerateSubscriber(
-            subscriber, this.u, this.normalForce, this.scheduler
+            subscriber, this.u, this.speedLimit, this.scheduler
         ));
     }
 }
 
 export class DecelerateSubscriber extends Subscriber {
-    constructor(destination, u, normalForce, scheduler) {
+    constructor(destination, u, speedLimit, scheduler) {
         super(destination, null, scheduler);
         this.u = u;
         this.point = null;
         this.hasPoint = false;
         this.scheduler = scheduler;
-        this.normalForce = normalForce;
+        this.speedLimit = speedLimit;
     }
     _next(point) {
         super._next((this.hasPoint = true) && (this.point = point));
@@ -31,16 +36,17 @@ export class DecelerateSubscriber extends Subscriber {
             return super._complete();
         }
 
-        const { u, normalForce, point, scheduler } = this;
-        const { index = 0, movementTTotal, direction, magnitude = 0 } = point;
+        const { u, point, speedLimit, scheduler } = this;
+        const { index = 0, movementT = 1, direction } = point;
 
-        if (index <= 0) {
+        if (!index || index <= 0) {
             return super._complete();
         }
 
-        const duration = Math.sqrt((magnitude / (movementTTotal / index)) / (normalForce * u)) || 0;
+        const magnitude = Math.min(point.magnitude, speedLimit);
+        const duration = Math.sqrt((magnitude / movementT) / (9.8 /*normalForce*/ * u)) || 0;
 
-        if (duration <= 0) {
+        if (!duration || duration <= 0) {
             return super._complete();
         }
 
@@ -48,8 +54,9 @@ export class DecelerateSubscriber extends Subscriber {
         const distanceY = Math.sin(direction) * magnitude * duration;
 
         this.add(scheduler.schedule(DecelerateSubscriber.dispatch, 0, {
+            point,
+            start: point,
             time: scheduler.now(),
-            point, start: point,
             duration: duration * 100,
             subscriber: this.destination,
             distanceX, distanceY, scheduler,
@@ -71,8 +78,6 @@ export class DecelerateSubscriber extends Subscriber {
             const easingFunc = quadOut;
             const pageX = easingFunc(elapsed, start.pageX, distanceX, duration);
             const pageY = easingFunc(elapsed, start.pageY, distanceY, duration);
-            const targetPageX = easingFunc(elapsed, start.targetPageX, distanceX, duration);
-            const targetPageY = easingFunc(elapsed, start.targetPageY, distanceX, duration);
 
             point = point.clone();
 

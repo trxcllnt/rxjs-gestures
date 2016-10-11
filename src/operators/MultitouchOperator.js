@@ -1,3 +1,4 @@
+import { Point } from '../support';
 import { MergeAllSubscriber } from 'rxjs/operator/mergeAll';
 
 export class MultitouchOperator {
@@ -15,13 +16,19 @@ export class MultitouchSubscriber extends MergeAllSubscriber {
     }
     _next(event) {
 
+        if (event instanceof Point) {
+            return this.notifyNext(event, event, ++this.index, 0);
+        }
+
         const index = this.index++;
-        const { type, currentTarget: target } = event;
+        const { type, button, buttons,
+                currentTarget: target } = event;
         const isTouch = (type[0] === 't');
 
         if (!isTouch) {
             const { pageX, pageY, clientX, clientY, screenX, screenY } = event;
             this.notifyNext(event, {
+                button, buttons,
                 type, event, touch: event, target,
                 index, pageX, pageY, screenX, screenY,
                 clientX, clientY, radiusX: 1, radiusY: 1,
@@ -37,6 +44,7 @@ export class MultitouchSubscriber extends MergeAllSubscriber {
                         screenX, screenY, clientX, clientY,
                         radiusX = 1, radiusY = 1, rotationAngle = 0 } = touch;
                 this.notifyNext(event, {
+                    button, buttons: 0,
                     type, event, touch, target, identifier,
                     index, pageX, pageY, screenX, screenY,
                     clientX, clientY, radiusX, radiusY,
