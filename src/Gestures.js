@@ -19,6 +19,7 @@ const touchEvents = {
 
 function identity(x){ return x; }
 function getIdentifier({ identifier }){ return identifier || 'mouse'; }
+function getReplaySubject1() { return new ReplaySubject(1); }
 function getTopLevelElement() {
     return typeof window !== 'undefined' ?
         window : typeof document !== 'undefined' ?
@@ -86,15 +87,8 @@ class Gestures extends Observable {
     static startsById(target = this.topLevelElement, inputs = 1) {
         return this
             .start(target)
-            .groupBy(getIdentifier)
-            .take(inputs)
-            .map((group) => {
-                const connectable = group.multicast(() => new ReplaySubject(1));
-                const refCounted = connectable.refCount();
-                refCounted.key = group.key;
-                connectable.connect();
-                return refCounted;
-            });
+            .groupBy(getIdentifier, null, null, getReplaySubject1)
+            .take(inputs);
     }
     static start(target = this.topLevelElement) {
         return new this(target, mouseEvents.start, touchEvents.start).lift(new MultitouchOperator());

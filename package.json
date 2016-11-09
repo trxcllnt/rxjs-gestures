@@ -45,7 +45,7 @@
     "tape": "4.6.0"
   },
   "dependencies": {
-    "rxjs": ">=5.0.0-rc.1",
+    "rxjs": ">=5.0.0-rc.2",
     "symbol-observable": ">=1.0.1"
   }
 }

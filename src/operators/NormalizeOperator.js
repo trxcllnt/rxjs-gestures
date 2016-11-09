@@ -19,6 +19,7 @@ export class NormalizeSubscriber extends Subscriber {
         this.previous = origin;
         this.Gestures = Gestures;
         this.scheduler = scheduler;
+        this.lastWindowTime = scheduler.now();
     }
     _next(multitouchEvent) {
 
@@ -26,9 +27,8 @@ export class NormalizeSubscriber extends Subscriber {
             return super._next(this.previous = multitouchEvent);
         }
 
-        let { origin } = this;
         const time = this.scheduler.now();
-
+        let { origin, lastWindowTime } = this;
         const { type, index, event, touch, target, screenX, screenY,
                 pageX, pageY, clientX, clientY, deltaX, deltaY, deltaZ,
                 radiusX = 1, radiusY = 1, rotationAngle = 0 } = multitouchEvent;
