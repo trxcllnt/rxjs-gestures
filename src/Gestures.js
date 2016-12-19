@@ -104,7 +104,7 @@ class Gestures extends Observable {
     static cancel(target = this.topLevelElement) {
         return new this(target, mouseEvents.cancel, touchEvents.cancel).lift(new MultitouchOperator());
     }
-    static tap(starts = this.topLevelElement, ends = {}, cancels, options) {
+    static tap(starts = this.topLevelElement, ends = {}, cancels, options = {}) {
 
         const {
             inputs = 1, timeout = 250,
@@ -133,7 +133,7 @@ class Gestures extends Observable {
             .takeUntil(cancels)
             .take(1);
     }
-    static press(starts = this.topLevelElement, moves = {}, ends, cancels, options) {
+    static press(starts = this.topLevelElement, moves = {}, ends, cancels, options = {}) {
 
         const {
             inputs = 1, delay = 0,
@@ -173,7 +173,7 @@ class Gestures extends Observable {
             )
             .take(1);
     }
-    static pan(starts = this.topLevelElement, moves = {}, ends, cancels, options) {
+    static pan(starts = this.topLevelElement, moves = {}, ends, cancels, options = {}) {
 
         const {
             inputs = 1, delay = 0,
