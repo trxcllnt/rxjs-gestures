@@ -1,6 +1,6 @@
 export class Point {
     constructor(time = 0, event = null, touch = null,
-                target = null, identifier = null,
+                target = null, identifier = undefined,
                 radiusX = 1, radiusY = 1, rotationAngle = 0,
                 x = 0, y = 0,
                 pageX = 0, pageY = 0,
@@ -56,7 +56,7 @@ Point.prototype.parentTop = 0;
 Point.prototype.parentLeft = 0;
 Point.prototype.parentRight = 0;
 Point.prototype.parentBottom = 0;
-Point.prototype.identifier = null;
+Point.prototype.identifier = undefined;
 Point.prototype.x = 0;
 Point.prototype.y = 0;
 Point.prototype.pageX = 0;
