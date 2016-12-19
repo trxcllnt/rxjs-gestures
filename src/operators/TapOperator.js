@@ -1,5 +1,5 @@
 import { selectId } from '../support';
-import { Observable, Subscriber } from 'rxjs';
+import { Subscriber } from 'rxjs/Subscriber';
 
 export class TapOperator {
     constructor(timeout, radius, Gestures) {
@@ -8,10 +8,10 @@ export class TapOperator {
         this.Gestures = Gestures;
     }
     call(subscriber, source) {
-        return source._subscribe(new TapSubscriber(subscriber,
-                                                   this.timeout,
-                                                   this.radius,
-                                                   this.Gestures));
+        return source.subscribe(new TapSubscriber(subscriber,
+                                                  this.timeout,
+                                                  this.radius,
+                                                  this.Gestures));
     }
 }
 
@@ -39,6 +39,6 @@ export class TapSubscriber extends Subscriber {
             Gestures.cancel(topLevelElement) :
             Gestures.cancel(topLevelElement).filter(selectPoint);
 
-        super._next(Gestures.tap(starts, { timeout, radius }, ends, cancels));
+        super._next(Gestures.tap(starts, ends, cancels, { timeout, radius }));
     }
 }

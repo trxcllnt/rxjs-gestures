@@ -1,5 +1,5 @@
 import { Point } from '../support';
-import { Subscriber } from 'rxjs';
+import { Subscriber } from 'rxjs/Subscriber';
 
 export class NormalizeOperator {
     constructor(origin, Gestures, scheduler) {
@@ -8,7 +8,7 @@ export class NormalizeOperator {
         this.scheduler = scheduler;
     }
     call(subscriber, source) {
-        return source._subscribe(new NormalizeSubscriber(subscriber, this.origin, this.Gestures, this.scheduler));
+        return source.subscribe(new NormalizeSubscriber(subscriber, this.origin, this.Gestures, this.scheduler));
     }
 }
 
@@ -19,7 +19,9 @@ export class NormalizeSubscriber extends Subscriber {
         this.previous = origin;
         this.Gestures = Gestures;
         this.scheduler = scheduler;
-        this.lastWindowTime = scheduler.now();
+        this.sampleX = 0;
+        this.sampleY = 0;
+        this.sampleT = scheduler.now();
     }
     _next(multitouchEvent) {
 
@@ -48,11 +50,26 @@ export class NormalizeSubscriber extends Subscriber {
         const movementXTotal = movementX + previous.movementXTotal;
         const movementYTotal = movementY + previous.movementYTotal;
         const movementTTotal = movementT + previous.movementTTotal;
+
+        let { sampleX, sampleY, sampleT } = this;
+        let sampleXTotal, sampleYTotal,
+            sampleTTotal = time - sampleT;
+
+        if (sampleTTotal >= 100) {
+            sampleXTotal = 0;
+            sampleYTotal = 0;
+            sampleTTotal = 1;
+            this.sampleT = sampleT = time;
+            this.sampleX = sampleX = pageX;
+            this.sampleY = sampleY = pageY;
+        } else {
+            sampleXTotal = pageX - sampleX;
+            sampleYTotal = pageY - sampleY;
+        }
+
+        const distance = Math.sqrt(sampleXTotal * sampleXTotal + sampleYTotal * sampleYTotal) || 0;
+        const speed = Math.sqrt(distance / (sampleTTotal || 1)) || 0;
         const direction = Math.atan2(movementY / movementT, movementX / movementT) || 0;
-        const magnitude = Math.abs(
-            Math.sqrt(Math.pow(pageX, 2) + Math.pow(pageY, 2)) -
-            Math.sqrt(Math.pow(prevX, 2) + Math.pow(prevY, 2)),
-        );
 
         const point = origin.clone();
 
@@ -75,7 +92,7 @@ export class NormalizeSubscriber extends Subscriber {
         point.screenY = screenY;
         point.radiusX = radiusX;
         point.radiusY = radiusY;
-        point.magnitude = magnitude;
+        point.speed = speed;
         point.direction = direction;
         point.rotationAngle = rotationAngle;
         point.movementXTotal = movementXTotal;

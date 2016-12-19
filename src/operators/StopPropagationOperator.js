@@ -1,11 +1,11 @@
-import { Subscriber } from 'rxjs';
+import { Subscriber } from 'rxjs/Subscriber';
 
 export class StopPropagationOperator {
     constructor(immediate = false) {
         this.immediate = immediate;
     }
     call(subscriber, source) {
-        return source._subscribe(new StopPropagationSubscriber(subscriber, this.immediate));
+        return source.subscribe(new StopPropagationSubscriber(subscriber, this.immediate));
     }
 }
 

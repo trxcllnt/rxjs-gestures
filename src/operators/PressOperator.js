@@ -1,5 +1,5 @@
 import { selectId } from '../support';
-import { Subscriber } from 'rxjs';
+import { Subscriber } from 'rxjs/Subscriber';
 
 export class PressOperator {
     constructor(delay, radius, Gestures) {
@@ -8,10 +8,10 @@ export class PressOperator {
         this.Gestures = Gestures;
     }
     call(subscriber, source) {
-        return source._subscribe(new PressSubscriber(subscriber,
-                                                     this.delay,
-                                                     this.radius,
-                                                     this.Gestures));
+        return source.subscribe(new PressSubscriber(subscriber,
+                                                    this.delay,
+                                                    this.radius,
+                                                    this.Gestures));
     }
 }
 
@@ -42,6 +42,6 @@ export class PressSubscriber extends Subscriber {
             Gestures.cancel(topLevelElement) :
             Gestures.cancel(topLevelElement).filter(selectPoint);
 
-        super._next(Gestures.press(starts, { delay, radius }, moves, ends, cancels));
+        super._next(Gestures.press(starts, moves, ends, cancels, { delay, radius }));
     }
 }

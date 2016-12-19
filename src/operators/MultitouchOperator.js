@@ -3,7 +3,7 @@ import { MergeAllSubscriber } from 'rxjs/operator/mergeAll';
 
 export class MultitouchOperator {
     call(subscriber, source) {
-        return source._subscribe(new MultitouchSubscriber(subscriber));
+        return source.subscribe(new MultitouchSubscriber(subscriber));
     }
 }
 

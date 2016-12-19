@@ -1,10 +1,12 @@
 import $$observable from 'symbol-observable';
 import { epsilon, selectId } from './support';
-import { Scheduler, Observable, ReplaySubject } from 'rxjs';
+import { Observable } from 'rxjs/Observable';
+import { ReplaySubject } from 'rxjs/ReplaySubject';
 import { TapOperator, PanOperator,
          NormalizeOperator, PressOperator,
          MultitouchOperator, DecelerateOperator,
          PreventDefaultOperator, StopPropagationOperator } from './operators';
+import { animationFrame as animationFrameScheduler } from 'rxjs/scheduler/animationFrame';
 
 const mouseEvents = {
     start: 'mousedown', end: 'mouseup',
@@ -18,7 +20,7 @@ const touchEvents = {
 };
 
 function identity(x){ return x; }
-function getIdentifier({ identifier }){ return identifier || 'mouse'; }
+function getIdentifier({ identifier = 'mouse' }){ return identifier; }
 function getReplaySubject1() { return new ReplaySubject(1); }
 function getTopLevelElement() {
     return typeof window !== 'undefined' ?
@@ -68,7 +70,7 @@ class Gestures extends Observable {
     stopPropagation(immediate = false) {
         return this.lift(new StopPropagationOperator(immediate));
     }
-    decelerate(coefficientOfFriction = 25, speedLimit = 200, scheduler = Scheduler.animationFrame) {
+    decelerate(coefficientOfFriction = 25, speedLimit = 3000/* px/s */, scheduler = animationFrameScheduler) {
         return this.lift(new DecelerateOperator(coefficientOfFriction, speedLimit, scheduler));
     }
     inside({ x: radiusX, y: radiusY }) {
@@ -81,7 +83,7 @@ class Gestures extends Observable {
             radiusX, radiusY, movementXTotal, movementYTotal
         ));
     }
-    normalize(origin, Gestures_ = this.constructor, scheduler = Scheduler.animationFrame) {
+    normalize(origin, Gestures_ = this.constructor, scheduler = animationFrameScheduler) {
         return this.lift(new NormalizeOperator(origin, Gestures_, scheduler));
     }
     static startsById(target = this.topLevelElement, inputs = 1) {
@@ -102,22 +104,24 @@ class Gestures extends Observable {
     static cancel(target = this.topLevelElement) {
         return new this(target, mouseEvents.cancel, touchEvents.cancel).lift(new MultitouchOperator());
     }
-    static tap(target = this.topLevelElement, {
-                   inputs = 1, timeout = 250,
-                   radius = { x: 10, y: 10 }
-               } = {}, ends, cancels) {
+    static tap(starts = this.topLevelElement, ends = {}, cancels, options) {
+
+        const {
+            inputs = 1, timeout = 250,
+            radius = { x: 10, y: 10 }
+        } = arguments.length <= 2 ? ends : options;
 
         if (arguments.length <= 2) {
             return (this
-                .startsById(target, inputs)
+                .startsById(starts, inputs)
                 .lift(new TapOperator(timeout, radius, this))
             );
         }
 
         ends = (ends instanceof this) && ends || new this(ends);
-        target = (target instanceof this) && target || new this(target);
+        starts = (starts instanceof this) && starts || new this(starts);
 
-        return target
+        return starts
             .preventDefault()
             .normalize(null, this)
             .mergeMap((start) => ends
@@ -129,28 +133,31 @@ class Gestures extends Observable {
             .takeUntil(cancels)
             .take(1);
     }
-    static press(target = this.topLevelElement, {
-                     inputs = 1, delay = 0,
-                     radius = { x: 10, y: 10 }
-                 } = {}, moves, ends, cancels) {
+    static press(starts = this.topLevelElement, moves = {}, ends, cancels, options) {
+
+        const {
+            inputs = 1, delay = 0,
+            radius = { x: 10, y: 10 }
+        } = arguments.length <= 2 ? moves : options;
+
         if (arguments.length <= 2) {
             return (this
-                .startsById(target, inputs)
+                .startsById(starts, inputs)
                 .lift(new PressOperator(delay, radius, this))
             );
         }
 
-        target = (target instanceof this) && target || new this(target);
+        starts = (starts instanceof this) && starts || new this(starts);
 
         if (delay <= 0) {
-            return target
+            return starts
                 .normalize(null, this)
                 .take(1);
         }
 
         moves = (moves instanceof this) && moves || new this(moves);
 
-        return target
+        return starts
             .preventDefault()
             .normalize(null, this)
             .mergeMap((start) => Observable
@@ -166,19 +173,24 @@ class Gestures extends Observable {
             )
             .take(1);
     }
-    static pan(target = this.topLevelElement, {
-                   inputs = 1, delay = 0,
-                   radius = { x: 10, y: 10 },
-               } = {}, moves, ends, cancels) {
+    static pan(starts = this.topLevelElement, moves = {}, ends, cancels, options) {
+
+        const {
+            inputs = 1, delay = 0,
+            radius = { x: 10, y: 10 },
+        } = arguments.length <= 2 ? moves : options;
+
         if (arguments.length <= 2) {
             return this
-                .startsById(target, inputs)
+                .startsById(starts, inputs)
                 .lift(new PanOperator(delay, radius, this))
         }
+
         ends = (ends instanceof this) && ends || new this(ends);
         moves = (moves instanceof this) && moves || new this(moves);
-        target = (target instanceof this) && target || new this(target);
-        return target
+        starts = (starts instanceof this) && starts || new this(starts);
+
+        return starts
             .preventDefault()
             .mergeMap((start) => moves
                 .merge(ends)

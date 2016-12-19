@@ -1,8 +1,8 @@
-import { Subscriber } from 'rxjs';
+import { Subscriber } from 'rxjs/Subscriber';
 
 export class PreventDefaultOperator {
     call(subscriber, source) {
-        return source._subscribe(new PreventDefaultSubscriber(subscriber));
+        return source.subscribe(new PreventDefaultSubscriber(subscriber));
     }
 }
 

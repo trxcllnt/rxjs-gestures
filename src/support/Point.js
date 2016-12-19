@@ -35,8 +35,10 @@ export class Point {
         this.targetScreenY = targetScreenY;
         this.rotationAngle = rotationAngle;
     }
-    clone() {
-        return Object.create(this);
+    clone(props) {
+        return !props ?
+            Object.create(this) :
+            Object.assign(Object.create(this), props);
     }
 }
 

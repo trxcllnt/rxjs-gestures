@@ -9,7 +9,7 @@ function throwWithMomentumGesture(starts) {
         .pan(starts)
         .repeat()
         .mergeMap((panGesture) => panGesture
-            .decelerate(1)
+            .decelerate(50)
             .takeUntil(starts))
         .map(({ targetX, targetY,
                 targetTop, targetLeft,
@@ -27,8 +27,8 @@ function throwWithMomentumGesture(starts) {
 const ThrowWithMomentum = mapPropsStream((props) => {
     const { handler: onStart, stream: starts } = createEventHandler();
     const points = throwWithMomentumGesture(starts);
-    return props.combineLatest(points, (props, { targetX, targetY }) => ({
-        onStart, ...props, targetX, targetY
+    return props.combineLatest(points, (props, { speed, targetX, targetY }) => ({
+        onStart, ...props, speed, targetX, targetY
     }));
 });
 
@@ -46,8 +46,8 @@ const ThrowableBox = ThrowWithMomentum(({
              style={{
                 ...style,
                 transform: `translate3d(${targetX}, ${targetY}, 0px)`
-            }}
-        />
+            }}>
+        </div>
     );
 });
 

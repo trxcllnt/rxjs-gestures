@@ -7,49 +7,39 @@ import createEventHandler from 'recompose/createEventHandler';
 
 function zoomGesture(starts) {
     return Gestures
-        .tap(starts, { inputs: 2 })
-        .combineAll()
+        .pan(starts, { inputs: 2 })
+        .pairwise()
         .repeat()
-        .map((points, touches) => ({
-            points,
-            touches: touches + 1,
-            targetX: undefined,
-            targetY: undefined,
-            targetWidth: undefined,
-            targetHeight: undefined
-        }))
-        .startWith({});
+        .switchMap(([panA, panB]) => panA
+            .combineLatest(panB, (pointA, pointB, index) => {
 
-        // .mergeMap(([pointsA, pointsB]) => pointsA.combineLatest(pointsB))
-        // .map(([pointA, pointB]) => {
-        //     const pointAX = pointA.targetXOrigin + pointA.targetXTotal;
-        //     const pointBX = pointB.targetXOrigin + pointB.targetXTotal;
-        //     const pointAY = pointA.targetYOrigin + pointA.targetYTotal;
-        //     const pointBY = pointB.targetYOrigin + pointB.targetYTotal;
-        //     const targetTop = Math.min(pointAY, pointBY);
-        //     const targetLeft = Math.min(pointAX, pointBX);
-        //     const targetRight = Math.max(pointAX, pointBX);
-        //     const targetBottom = Math.max(pointAY, pointBY);
-        //     return {
-        //         targetX: targetTop + 'px',
-        //         targetY: targetLeft + 'px',
-        //         targetWidth: (targetRight - targetLeft) + 'px',
-        //         targetHeight: (targetBottom - targetTop) + 'px',
-        //     };
-        // })
+                const width = pointA.targetRight - pointA.targetLeft;
+                const height = pointA.targetBottom - pointA.targetTop;
 
-        // .pan(starts)
-        // .repeat()
-        // .mergeAll()
-        // .map(({ targetX, targetY,
-        //         targetTop, targetLeft,
-        //         targetRight, targetBottom }) => ({
-        //     targetX: targetX + 'px',
-        //     targetY: targetY + 'px',
-        //     targetWidth: (targetRight - targetLeft) + 'px',
-        //     targetHeight: (targetBottom - targetTop) + 'px',
-        // }))
-        // .startWith({});
+                const pointAX = pointA.targetXOrigin + pointA.movementXTotal;
+                const pointBX = pointB.targetXOrigin + pointB.movementXTotal;
+                const pointAY = pointA.targetYOrigin + pointA.movementYTotal;
+                const pointBY = pointB.targetYOrigin + pointB.movementYTotal;
+
+                const minX = Math.min(pointAX, pointBX);
+                const minY = Math.min(pointAY, pointBY);
+                const maxX = Math.max(pointAX, pointBX);
+                const maxY = Math.max(pointAY, pointBY);
+
+                return {
+                    index,
+                    status: 'zooming',
+                    targetX: minX + 'px',
+                    targetY: minY + 'px',
+                    targetWidth: width + (maxX - minX) + 'px',
+                    targetHeight: height + (maxY - minY) + 'px',
+                };
+            })
+            .concat(Observable.of({
+                status: 'completed',
+            }))
+        )
+        .startWith({ status: 'started' });
 }
 
 const Zoomable = mapPropsStream((props) => {
@@ -62,10 +52,10 @@ const Zoomable = mapPropsStream((props) => {
 });
 
 const ZoomBox = Zoomable(({
-    err,
-    style, onStart,
-    touches = 0,
+    index = 0,
+    style = {},
     points = [],
+    err, status, onStart,
     initialX, initialY,
     targetX = initialX,
     targetY = initialY,
@@ -73,18 +63,26 @@ const ZoomBox = Zoomable(({
     targetHeight = style.height || '0px', ...props
 }) => {
     return (
-        <div {...props}
-             onMouseDown={onStart}
-             onTouchStart={onStart}
-             style={{
-                 ...style,
-                 width: `${targetWidth}`,
-                 height: `${targetHeight}`,
-                 transform: `translate3d(${targetX}, ${targetY}, 0px)`
-             }}>
-            <p>{touches}</p>
-            <p>{points.toString()}</p>
-            {err && <p>{err.toString()}</p>}
+        <div style={{
+            top: 0, left: 0,
+            position: `absolute`,
+            width: `100%`, height: `100%`,
+        }}>
+            <p>{status}</p>
+            <div {...props}
+                 onMouseDown={onStart}
+                 onTouchStart={onStart}
+                 style={{
+                     ...style,
+                     width: `${targetWidth}`, height: `${targetHeight}`,
+                     transform: `translate3d(${targetX}, ${targetY}, 0px)`
+                 }}>
+                <span>{index}</span><br/>
+                <span>({targetX}, {targetY})</span><br/>
+                <span>{points.length}</span><br/>
+                <span>{points.map(({ x, y }) => `\n(${x}, ${y})`).join('')}</span>
+                {err && <p>{err.toString()}</p>}
+            </div>
         </div>
     );
 });

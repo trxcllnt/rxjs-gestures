@@ -1,5 +1,5 @@
 import { selectId } from '../support';
-import { Subscriber } from 'rxjs';
+import { Subscriber } from 'rxjs/Subscriber';
 
 export class PanOperator {
     constructor(delay, radius, Gestures) {
@@ -8,10 +8,10 @@ export class PanOperator {
         this.Gestures = Gestures;
     }
     call(subscriber, source) {
-        return source._subscribe(new PanSubscriber(subscriber,
-                                                   this.delay,
-                                                   this.radius,
-                                                   this.Gestures));
+        return source.subscribe(new PanSubscriber(subscriber,
+                                                  this.delay,
+                                                  this.radius,
+                                                  this.Gestures));
     }
 }
 
@@ -43,8 +43,8 @@ export class PanSubscriber extends Subscriber {
             Gestures.cancel(topLevelElement) :
             Gestures.cancel(topLevelElement).filter(selectPoint);
 
-        const presses = Gestures.press(starts, { delay, radius }, moves, ends, cancels);
+        const presses = Gestures.press(starts, moves, ends, cancels, { delay, radius });
 
-        super._next(Gestures.pan(presses, { delay, radius }, moves, ends, cancels));
+        super._next(Gestures.pan(presses, moves, ends, cancels, { delay, radius }));
     }
 }
