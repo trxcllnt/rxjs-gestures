@@ -1,5 +1,6 @@
 import { Point } from '../support';
-import { MergeAllSubscriber } from 'rxjs/operator/mergeAll';
+import { identity } from 'rxjs/util/identity';
+import { MergeMapSubscriber } from 'rxjs/operators/mergeMap';
 
 export class MultitouchOperator {
     call(subscriber, source) {
@@ -9,9 +10,9 @@ export class MultitouchOperator {
 
 const degToRad = Math.PI / 180;
 
-export class MultitouchSubscriber extends MergeAllSubscriber {
+export class MultitouchSubscriber extends MergeMapSubscriber {
     constructor(destination) {
-        super(destination, Number.POSITIVE_INFINITY);
+        super(destination, identity);
         this.index = 0;
     }
     _next(event) {
