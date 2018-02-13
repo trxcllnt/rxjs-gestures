@@ -9,7 +9,7 @@ function throwWithMomentumGesture(starts) {
         .pan(starts)
         .repeat()
         .mergeMap((panGesture) => panGesture
-            .decelerate(50)
+            .decelerate(10)
             .takeUntil(starts))
         .map(({ targetX, targetY,
                 targetTop, targetLeft,

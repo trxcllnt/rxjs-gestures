@@ -33,7 +33,7 @@ export class NormalizeSubscriber extends Subscriber {
         let { origin, lastWindowTime } = this;
         const { type, index, event, touch, target, screenX, screenY,
                 pageX, pageY, clientX, clientY, deltaX, deltaY, deltaZ,
-                radiusX = 1, radiusY = 1, rotationAngle = 0 } = multitouchEvent;
+                button, buttons, radiusX = 1, radiusY = 1, rotationAngle = 0 } = multitouchEvent;
 
         if (!origin) {
             this.origin = origin = NormalizeSubscriber.createOrigin(
@@ -51,24 +51,18 @@ export class NormalizeSubscriber extends Subscriber {
         const movementYTotal = movementY + previous.movementYTotal;
         const movementTTotal = movementT + previous.movementTTotal;
 
-        let { sampleX, sampleY, sampleT } = this;
-        let sampleXTotal, sampleYTotal,
-            sampleTTotal = time - sampleT;
+        const sampleTTotal = time - this.sampleT;
+        const sampleXTotal = pageX - this.sampleX;
+        const sampleYTotal = pageY - this.sampleY;
 
         if (sampleTTotal >= 100) {
-            sampleXTotal = 0;
-            sampleYTotal = 0;
-            sampleTTotal = 1;
-            this.sampleT = sampleT = time;
-            this.sampleX = sampleX = pageX;
-            this.sampleY = sampleY = pageY;
-        } else {
-            sampleXTotal = pageX - sampleX;
-            sampleYTotal = pageY - sampleY;
+            this.sampleT = time;
+            this.sampleX = pageX;
+            this.sampleY = pageY;
         }
 
         const distance = Math.sqrt(sampleXTotal * sampleXTotal + sampleYTotal * sampleYTotal) || 0;
-        const speed = Math.sqrt(distance / (sampleTTotal || 1)) || 0;
+        const speed = Math.sqrt((distance / (sampleTTotal || 1)) / 5) || 0;
         const direction = Math.atan2(movementY / movementT, movementX / movementT) || 0;
 
         const point = origin.clone();
@@ -80,6 +74,8 @@ export class NormalizeSubscriber extends Subscriber {
         point.event = event;
         point.pageX = pageX;
         point.pageY = pageY;
+        point.button = button;
+        point.buttons = buttons;
         point.movementT = movementT;
         point.movementX = movementX;
         point.movementY = movementY;
@@ -120,15 +116,18 @@ export class NormalizeSubscriber extends Subscriber {
                 clientX, clientY, screenX, screenY,
                 radiusX = 1, radiusY = 1, rotationAngle = 0 } = event;
 
-        const { offsetParent = topLevelElement,
-                offsetLeft, offsetTop, scrollTop, scrollLeft } = target;
+        const { scrollTop, scrollLeft } = target;
+        const parent = target.offsetParent || target.parentNode || topLevelElement;
 
         const { top: targetTop, left: targetLeft,
                 right: targetRight, bottom: targetBottom } = target.getBoundingClientRect();
 
         const { top: parentTop, left: parentLeft,
-                right: parentRight, bottom: parentBottom } = offsetParent.getBoundingClientRect();
+                right: parentRight, bottom: parentBottom } = parent.getBoundingClientRect();
 
+        let { offsetLeft, offsetTop } = target;
+        ('ownerSVGElement' in target) && (
+            { x: offsetLeft, y: offsetTop } = target.getBBox());
 
         const x = clientX - targetLeft - scrollLeft;
         const y = clientY - targetTop - scrollTop;
