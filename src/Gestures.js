@@ -11,7 +11,7 @@ import { animationFrame as animationFrameScheduler } from 'rxjs/scheduler/animat
 const mouseEvents = {
     start: 'mousedown', end: 'mouseup',
     move: 'mousemove', cancel: 'mouseleave',
-    wheel: 'wheel', mousewheel: 'mousewheel',
+    wheel: 'wheel',
 };
 
 const touchEvents = {
@@ -104,6 +104,9 @@ class Gestures extends Observable {
     static cancel(target = this.topLevelElement) {
         return new this(target, mouseEvents.cancel, touchEvents.cancel).lift(new MultitouchOperator());
     }
+    static wheel(target = this.topLevelElement) {
+        return new this(target, mouseEvents.wheel).lift(new MultitouchOperator());
+    }
     static tap(starts = this.topLevelElement, ends = {}, cancels, options = {}) {
 
         const {
@@ -193,7 +196,6 @@ class Gestures extends Observable {
         return starts
             .preventDefault()
             .mergeMap((start) => moves
-                .merge(ends)
                 .normalize(start, this)
                 .startWith(start))
             .takeUntil(ends.merge(cancels));
