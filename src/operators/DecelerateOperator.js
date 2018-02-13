@@ -46,7 +46,7 @@ export class DecelerateSubscriber extends Subscriber {
         const time = scheduler.now();
 
         if (time - point.time >= 25) {
-            super._next(point.clone({ speed: 0 }));
+            super._next(point.clone({ button: 0, buttons: 0, speed: 0 }));
             return super._complete();
         }
 
@@ -75,7 +75,7 @@ export class DecelerateSubscriber extends Subscriber {
               scheduler, subscriber,
               distanceX, distanceY, duration } = state;
 
-        const easingFunc = quadOut;
+        const easingFunc = quartOut;
         const now = scheduler.now();
         const elapsed = Math.min(now - time, duration);
         const pageX = easingFunc(elapsed, start.pageX, distanceX, duration);
@@ -83,6 +83,8 @@ export class DecelerateSubscriber extends Subscriber {
 
         point = point.clone();
 
+        point.button = 0;
+        point.buttons = 0;
         point.movementT = now - point.time;
         point.movementX = pageX - point.pageX;
         point.movementY = pageY - point.pageY;
@@ -119,6 +121,6 @@ export class DecelerateSubscriber extends Subscriber {
     }
 }
 
-function quadOut(time, begin, change, duration) {
-    return -change * (time = time / duration) * (time - 2) + begin;
+function quartOut(time, begin, change, duration) {
+    return -change * ((time = time / duration - 1) * time * time * time - 1) + begin;
 }
