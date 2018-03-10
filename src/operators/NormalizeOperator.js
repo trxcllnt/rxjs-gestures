@@ -151,6 +151,7 @@ export class NormalizeSubscriber extends Subscriber {
                                  targetClientX, targetClientY,
                                  targetScreenX, targetScreenY);
         origin.type = type;
+        origin.origin = origin;
         origin.xOrigin = origin.x;
         origin.yOrigin = origin.y;
         origin.targetTop = targetTop;
